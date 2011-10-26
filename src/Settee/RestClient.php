@@ -5,7 +5,7 @@ namespace Settee;
 /**
 * HTTP REST Client for CouchDB API
 */
-class SetteeRestClient {
+class RestClient {
   
   /**
   * HTTP Timeout in Milliseconds
@@ -23,7 +23,7 @@ class SetteeRestClient {
   function get_instance($base_url) {
 
     if (empty($this->curl_workers[$base_url])) {
-      $this->curl_workers[$base_url] = new SetteeRestClient($base_url);
+      $this->curl_workers[$base_url] = new RestClient($base_url);
     }
     
     return $this->curl_workers[$base_url];
@@ -35,14 +35,14 @@ class SetteeRestClient {
   private function __construct($base_url) {
     $this->base_url = $base_url;
 
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_USERAGENT, "Settee CouchDB Client/1.0");
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl, CURLOPT_HEADER, 0);
-    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($curl, CURLOPT_TIMEOUT_MS, self::HTTP_TIMEOUT);
-    curl_setopt($curl, CURLOPT_FORBID_REUSE, false); // Connection-pool for CURL
+    $curl = \curl_init();
+    \curl_setopt($curl, CURLOPT_USERAGENT, "Settee CouchDB Client/1.0");
+    \curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    \curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    \curl_setopt($curl, CURLOPT_HEADER, 0);
+    \curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+    \curl_setopt($curl, CURLOPT_TIMEOUT_MS, self::HTTP_TIMEOUT);
+    \curl_setopt($curl, CURLOPT_FORBID_REUSE, false); // Connection-pool for CURL
 
     $this->curl = $curl;
     
@@ -52,7 +52,7 @@ class SetteeRestClient {
   * Class destructor cleans up any resources
   */
   function __destruct() {
-     curl_close($this->curl);
+     \curl_close($this->curl);
   }
 
  /**
@@ -65,22 +65,22 @@ class SetteeRestClient {
   * 
   */
   function http_head($uri) {
-    curl_setopt($this->curl, CURLOPT_HEADER, 1);
+    \curl_setopt($this->curl, CURLOPT_HEADER, 1);
 
     $full_url = $this->get_full_url($uri);
-    curl_setopt($this->curl, CURLOPT_URL, $full_url);
-    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
-    curl_setopt($this->curl, CURLOPT_NOBODY, true);
+    \curl_setopt($this->curl, CURLOPT_URL, $full_url);
+    \curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, 'HEAD');
+    \curl_setopt($this->curl, CURLOPT_NOBODY, true);
 
 
     $response = curl_exec($this->curl);
     // Restore default values
-    curl_setopt($this->curl, CURLOPT_NOBODY, false);
-    curl_setopt($this->curl, CURLOPT_HEADER, false);
+    \curl_setopt($this->curl, CURLOPT_NOBODY, false);
+    \curl_setopt($this->curl, CURLOPT_HEADER, false);
     
-    $resp_code = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+    $resp_code = \curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
     if ($resp_code == 404 ) {
-      throw new SetteeRestClientException("Couch document not found at: '$full_url'");
+      throw new RestClientException("Couch document not found at: '$full_url'");
     }
 
     if (function_exists('http_parse_headers')) {
@@ -154,14 +154,14 @@ class SetteeRestClient {
     $data = (is_array($data)) ? http_build_query($data) : $data;
 
     if (!empty($data)) {
-      curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-Length: ' . strlen($data)));
-      curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
+      \curl_setopt($this->curl, CURLOPT_HTTPHEADER, array('Content-Length: ' . strlen($data)));
+      \curl_setopt($this->curl, CURLOPT_POSTFIELDS, $data);
     }
 
-    curl_setopt($this->curl, CURLOPT_URL, $this->get_full_url($uri));
-    curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $http_method);
+    \curl_setopt($this->curl, CURLOPT_URL, $this->get_full_url($uri));
+    \curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $http_method);
 
-    $response = curl_exec($this->curl);
+    $response = \curl_exec($this->curl);
     $response_decoded = $this->decode_response($response);
     $response = array('json' => $response, 'decoded'=>$response_decoded);
 
@@ -173,10 +173,10 @@ class SetteeRestClient {
   /**
    * Check http status for safe return codes
    *
-   * @throws SetteeRestClientException
+   * @throws RestClientException
    */
   private function check_status($response) {
-    $resp_code = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+    $resp_code = \curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
 
     if ($resp_code < 199 || $resp_code > 399 || !empty($response['decoded']->error)) {
       $msg = "CouchDB returned: \"HTTP 1.1. $resp_code\". ERROR: " . $response['json'];
@@ -245,4 +245,4 @@ class SetteeRestClient {
   }
 }
 
-class SetteeRestClientException extends Exception {}
+class RestClientException extends \Exception {}
