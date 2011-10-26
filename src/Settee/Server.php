@@ -1,5 +1,7 @@
 <?php
 
+namespace Settee;
+
 /**
 * CouchDB Server Manager
 */
