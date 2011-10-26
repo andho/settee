@@ -5,7 +5,7 @@ namespace Settee;
 /**
 * Databaase class.
 */
-class SetteeDatabase {
+class Database {
 
   /**
   * Base URL of the CouchDB REST API
@@ -28,7 +28,7 @@ class SetteeDatabase {
   function __construct($conn_url, $dbname) {
     $this->conn_url = $conn_url;
     $this->dbname = $dbname;
-    $this->rest_client = SetteeRestClient::get_instance($this->conn_url);
+    $this->rest_client = RestClient::get_instance($this->conn_url);
   }
 
 
@@ -66,7 +66,7 @@ class SetteeDatabase {
   * @return
   *     document object with the database id (uuid) and revision attached;
   *
-  *  @throws SetteeCreateDatabaseException
+  *  @throws CreateDatabaseException
   */
   function save($document, $allowRevAutoDetection = false) {
     if (is_string($document)) {
@@ -77,7 +77,7 @@ class SetteeDatabase {
       $id = $this->gen_uuid();
     }
     elseif (empty($document->_id) && !empty($document->_rev)) {
-      throw new SetteeWrongInputException("Error: You can not save a document with a revision provided, but missing id");
+      throw new WrongInputException("Error: You can not save a document with a revision provided, but missing id");
     }
     else {
       $id = $document->_id;
@@ -85,7 +85,7 @@ class SetteeDatabase {
       if ($allowRevAutoDetection) {
         try {
           $rev = $this->get_rev($id);
-        } catch (SetteeRestClientException $e) {
+        } catch (RestClientException $e) {
           // auto-detection may fail legitimately, if a document has never been saved before (new doc), so skipping error
         }
         if (!empty($rev)) {
@@ -147,7 +147,7 @@ class SetteeDatabase {
    *
    * Retrieve a document from CouchDB
    *
-   * @throws SetteeWrongInputException
+   * @throws WrongInputException
    * 
    * @param  $id
    *    Unique ID (usually: UUID) of the document to be retrieved.
@@ -156,7 +156,7 @@ class SetteeDatabase {
    */
   function get($id) {
     if (empty($id)) {
-      throw new SetteeWrongInputException("Error: Can't retrieve a document without a uuid.");
+      throw new WrongInputException("Error: Can't retrieve a document without a uuid.");
     }
 
     $full_uri = $this->dbname . "/" . $this->safe_urlencode($id);
@@ -169,7 +169,7 @@ class SetteeDatabase {
    *
    * Get the latest revision of a document with document id: $id in CouchDB.
    *
-   * @throws SetteeWrongInputException
+   * @throws WrongInputException
    *
    * @param  $id
    *    Unique ID (usually: UUID) of the document to be retrieved.
@@ -178,7 +178,7 @@ class SetteeDatabase {
    */
   function get_rev($id) {
     if (empty($id)) {
-      throw new SetteeWrongInputException("Error: Can't query a document without a uuid.");
+      throw new WrongInputException("Error: Can't query a document without a uuid.");
     }
 
     $full_uri = $this->dbname . "/" . $this->safe_urlencode($id);
@@ -268,7 +268,7 @@ class SetteeDatabase {
 
 
     if (empty($id)) {
-      throw new SetteeWrongInputException("Error: Can't retrieve a document without a uuid.");
+      throw new WrongInputException("Error: Can't retrieve a document without a uuid.");
     }
 
     $full_uri = $this->dbname . "/" . $this->safe_urlencode($id);
